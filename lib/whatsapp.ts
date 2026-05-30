@@ -7,6 +7,7 @@ import makeWASocket, {
 import { Boom } from '@hapi/boom'
 import pino from 'pino'
 import { EventEmitter } from 'events'
+import os from 'os'
 import path from 'path'
 
 type WASocket = ReturnType<typeof makeWASocket>
@@ -22,6 +23,11 @@ interface WASingleton {
 declare global {
   // eslint-disable-next-line no-var
   var _wa: WASingleton | undefined
+}
+
+// Armazena fora do projeto para não interferir no build do Next.js
+function getAuthPath(): string {
+  return process.env.WA_AUTH_PATH || path.join(os.homedir(), '.wa-loteria-auth')
 }
 
 function wa(): WASingleton {
@@ -41,8 +47,8 @@ export async function iniciarWhatsApp() {
   if (s.init) return
   s.init = true
 
-  const logger = pino({ level: 'silent' })
-  const authPath = path.join(process.cwd(), 'auth_info_baileys')
+  const logger   = pino({ level: 'silent' })
+  const authPath = getAuthPath()
   const { state, saveCreds } = await useMultiFileAuthState(authPath)
   const { version } = await fetchLatestBaileysVersion()
 
@@ -74,7 +80,7 @@ export async function iniciarWhatsApp() {
         s.init = false
         setTimeout(() => iniciarWhatsApp(), 5000)
       } else {
-        console.error('[WA] Sessão expirada. Delete auth_info_baileys e reinicie.')
+        console.error('[WA] Sessão expirada. Reinicie pela página /whatsapp.')
       }
     }
     if (connection === 'open') {
@@ -93,12 +99,10 @@ export async function reiniciarWhatsApp() {
     s.sock = null
   }
   s.ready = false
-  s.qr = null
-  s.init = false
+  s.qr    = null
+  s.init  = false
   const { rm } = await import('fs/promises')
-  try {
-    await rm(path.join(process.cwd(), 'auth_info_baileys'), { recursive: true, force: true })
-  } catch {}
+  try { await rm(getAuthPath(), { recursive: true, force: true }) } catch {}
   await iniciarWhatsApp()
 }
 
