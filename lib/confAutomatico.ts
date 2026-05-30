@@ -29,6 +29,20 @@ const MIN_ACERTOS: Record<string, number> = {
   'Lotofácil': 11, 'Mega-Sena': 4, 'Quina': 2, 'Dupla Sena': 3,
 }
 
+// Corrige mojibake: "LotofÃ¡cil" → "Lotofácil" (UTF-8 lido como Latin-1)
+function normalizarModalidade(m: string): string {
+  if (!m) return m
+  if (API_MAP[m]) return m // já correto
+  try {
+    const fixed = Buffer.from(m, 'latin1').toString('utf8')
+    if (API_MAP[fixed]) return fixed
+  } catch { /* */ }
+  // fallback: comparação sem acento case-insensitive
+  const semAcento = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  const match = Object.keys(API_MAP).find(k => semAcento(k) === semAcento(m))
+  return match || m
+}
+
 function toNum(v: unknown): number {
   if (typeof v === 'number') return v
   const n = Number(String(v ?? '').replace(/\./g, '').replace(',', '.').trim())
@@ -373,8 +387,13 @@ export async function processarConferencia() {
   if (errLinhas) { console.error('Erro ao buscar jogos_mensal:', errLinhas); return }
   if (!grupos?.length || !linhas?.length) { console.warn('Sem grupos/linhas.'); return }
 
+  // Normaliza modalidade de todas as linhas antes de processar (corrige mojibake do banco)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const l of linhas as any[]) l.modalidade = normalizarModalidade(l.modalidade)
+
   const chaves = new Map()
-  for (const l of linhas) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const l of linhas as any[]) {
     const k = `${l.modalidade}||${l.nome_grupo}`
     if (!chaves.has(k)) chaves.set(k, l)
   }

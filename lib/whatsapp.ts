@@ -48,7 +48,18 @@ export async function iniciarWhatsApp() {
 
   const logger   = pino({ level: 'silent' })
   const authPath = getAuthPath()
-  const { state, saveCreds } = await useMultiFileAuthState(authPath)
+  let state: Awaited<ReturnType<typeof useMultiFileAuthState>>['state']
+  let saveCreds: Awaited<ReturnType<typeof useMultiFileAuthState>>['saveCreds']
+  try {
+    const auth = await useMultiFileAuthState(authPath)
+    state     = auth.state
+    saveCreds = auth.saveCreds
+  } catch (e) {
+    s.init = false
+    console.error('[WA] Falha ao ler auth state:', (e as Error).message)
+    setTimeout(() => iniciarWhatsApp(), 10000)
+    return
+  }
 
   // Fallback para versão fixa caso a busca online falhe
   let version: [number, number, number] = [2, 3000, 1015901307]
