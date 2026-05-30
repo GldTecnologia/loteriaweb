@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getWAState, iniciarWhatsApp } from '@/lib/whatsapp'
+import { getWaStatus, iniciarWhatsApp } from '@/lib/whatsapp'
 
 export async function GET() {
   await iniciarWhatsApp()
-  const { isReady } = getWAState()
-  return NextResponse.json({ conectado: isReady })
+  return NextResponse.json(getWaStatus())
 }
