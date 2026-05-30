@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,7 +28,7 @@ function validarNome(nome: string): { valido: boolean; erro?: string } {
   return { valido: true }
 }
 
-export default function JogosPage() {
+function JogosPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const bolaoIdParam = searchParams.get('bolao')
@@ -609,5 +609,22 @@ export default function JogosPage() {
       </div>
     </div>
     </>
+  )
+}
+
+export default function JogosPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-blue-700 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-gray-500">Carregando...</p>
+          </div>
+        </div>
+      }
+    >
+      <JogosPageContent />
+    </Suspense>
   )
 }
