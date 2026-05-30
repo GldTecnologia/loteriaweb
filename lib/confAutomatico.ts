@@ -413,8 +413,9 @@ export async function processarConferencia() {
       }
 
       const waJID = String(grupo.whatsapp_jid || grupo.id_telegram || WA_JID || '').trim()
+      console.log(`  → grupo_bolao encontrado | whatsapp_jid="${grupo.whatsapp_jid}" | waJID="${waJID}"`)
       if (!waJID) {
-        console.warn(`Grupo "${cfg.nome_grupo}" sem JID configurado em whatsapp_jid/id_telegram.`)
+        console.warn(`  ✗ Grupo "${cfg.nome_grupo}" sem JID — configure whatsapp_jid em grupo_bolao ou WA_JID no .env`)
         continue
       }
 
@@ -428,6 +429,7 @@ export async function processarConferencia() {
 
       const status   = String(cfg.status || '').toUpperCase()
       const especial = String(cfg.especial || '').toUpperCase() === 'S'
+      console.log(`  → cfg.id=${cfg.id} status="${cfg.status}"(${status}) especial="${cfg.especial}"(${especial}) | ativas=${ativas.length}`)
 
       // ── ESPECIAL ──────────────────────────────────────────────────────
       if (especial) {
@@ -436,8 +438,9 @@ export async function processarConferencia() {
         const concurso = cfg.concurso_inicio || (cfg.concurso_ultimo ? cfg.concurso_ultimo + 1 : null)
         if (!concurso) { console.warn('Especial: concurso não parametrizado.'); continue }
 
+        console.log(`  → buscando resultado: ${cfg.modalidade} concurso ${concurso}`)
         const res = await buscarResultado(cfg.modalidade, concurso)
-        if (!res) { console.warn('Especial: resultado não disponível.'); continue }
+        if (!res) { console.warn(`  ✗ Especial: resultado do concurso ${concurso} não disponível na API ainda.`); continue }
 
         let total = 0
         const premiosPorAposta: { seq: number; valor: number }[] = []
@@ -501,7 +504,10 @@ export async function processarConferencia() {
       }
 
       // ── NORMAL ────────────────────────────────────────────────────────
-      if (status !== 'A') { console.log('Normal ignorado: status != A.'); continue }
+      if (status !== 'A') {
+        console.log(`  ✗ Normal ignorado: cfg.status="${cfg.status}" após toUpperCase="${status}" — esperado "A"`)
+        continue
+      }
 
       const diasCfg = cfg.dias_sorteio ?? cfg.dias_sorteios ?? ''
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
