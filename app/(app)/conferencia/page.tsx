@@ -9,7 +9,6 @@ import { ListChecks, Play, Trophy, AlertCircle, RefreshCw } from 'lucide-react'
 import { FaClover } from 'react-icons/fa6'
 import { pad2 } from '@/lib/utils'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000'
 
 interface RateioItem {
   faixa?: number
@@ -247,7 +246,7 @@ export default function ConferenciaPage() {
   async function executarConferencia() {
     setExecutando(true)
     try {
-      const res  = await fetch(`${BACKEND_URL}/api/executar`)
+      const res  = await fetch('/api/executar')
       const data = await res.json()
       if (data.error) throw new Error(data.detalhe || data.error)
       toast('Conferência executada! Resultados enviados ao WhatsApp.', 'success')
