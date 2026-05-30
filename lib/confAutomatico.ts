@@ -395,7 +395,11 @@ export async function processarConferencia() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const l of linhas as any[]) {
     const k = `${l.modalidade}||${l.nome_grupo}`
-    if (!chaves.has(k)) chaves.set(k, l)
+    const atual = chaves.get(k)
+    const lAtivo = String(l.status || '').toUpperCase() === 'A'
+    const atualAtivo = atual && String(atual.status || '').toUpperCase() === 'A'
+    // Prefere sempre um row com status='A' como cfg; se empate, mantém o primeiro
+    if (!atual || (lAtivo && !atualAtivo)) chaves.set(k, l)
   }
 
   for (const [, cfg] of chaves) {
