@@ -303,7 +303,13 @@ export async function processarConferencia() {
       const ativas = linhas.filter((a: { modalidade: string; nome_grupo: string; status: string }) =>
         a.modalidade === cfg.modalidade && a.nome_grupo === cfg.nome_grupo && String(a.status || '').toUpperCase() === 'A'
       )
-      if (!ativas.length) { console.warn('Sem apostas ativas.'); continue }
+      console.log(`  → total linhas: ${linhas.length}, ativas neste grupo: ${ativas.length}`)
+      if (!ativas.length) {
+        const exemplos = linhas.filter((a: { modalidade: string; nome_grupo: string }) => a.modalidade === cfg.modalidade && a.nome_grupo === cfg.nome_grupo)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        console.warn(`  ✗ Sem apostas ativas. Status encontrados:`, exemplos.map((a: any) => a.status))
+        continue
+      }
 
       const status   = String(cfg.status || '').toUpperCase()
       const especial = String(cfg.especial || '').toUpperCase() === 'S'
@@ -360,9 +366,16 @@ export async function processarConferencia() {
       if (status !== 'A') continue
 
       const diasCfg = cfg.dias_sorteio ?? cfg.dias_sorteios ?? ''
+      console.log(`  → diasCfg do cfg: "${diasCfg}", hoje (0=Dom): ${getWeekdaySP()}`)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ativasHoje = ativas.filter((a: any) => isHojeSorteio(a.dias_sorteio ?? a.dias_sorteios ?? diasCfg))
-      if (!ativasHoje.length) { console.log('Sem apostas para hoje.'); continue }
+      const ativasHoje = ativas.filter((a: any) => {
+        const dias = a.dias_sorteio ?? a.dias_sorteios ?? diasCfg
+        // se dias_sorteio não estiver configurado, inclui a aposta (todos os dias)
+        if (!dias || String(dias).trim() === '') return true
+        return isHojeSorteio(dias)
+      })
+      console.log(`  → ativasHoje: ${ativasHoje.length} de ${ativas.length}`)
+      if (!ativasHoje.length) { console.log('  ✗ Sem apostas para hoje (dias_sorteio não bate).'); continue }
 
       const proxConcurso = cfg.concurso_ultimo ? cfg.concurso_ultimo + 1 : cfg.concurso_inicio
       if (!proxConcurso) { console.warn('concurso_ultimo/inicio indefinidos.'); continue }
