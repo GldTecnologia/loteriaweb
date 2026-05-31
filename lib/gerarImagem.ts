@@ -97,7 +97,7 @@ export async function gerarImagemResultado(params: ResultadoParams): Promise<Buf
   const H_HEADER  = 130
   const H_NUMS    = 70 + numLinhas * 64 + 16
   const H_STATS   = 110
-  const H_ACUM    = acumulado ? 80 : 0
+  const H_ACUM    = acumulado ? (valorEstimadoProximo > 0 ? 106 : 88) : 0
   const H_PREMIO  = premios.length  > 0 ? 44 + premios.length  * 30 : 0
   const H_GANH    = ganhadores.length > 0 ? 44 + ganhadores.length * 32 : 0
   const H_APOSTAS = apostas.length * 128 + (apostas.length > 0 ? 40 : 0)
@@ -207,10 +207,14 @@ export async function gerarImagemResultado(params: ResultadoParams): Promise<Buf
     fillRR(ctx, PAD, y, W - PAD * 2, 70, 14, '#fffbeb')
     noShadow(ctx)
     ctx.fillStyle = '#92400e'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center'
-    ctx.fillText('Premio Acumulado!', W / 2, y + 28)
+    ctx.fillText('Prêmio Acumulado!', W / 2, y + 26)
     ctx.fillStyle = '#b45309'; ctx.font = '13px sans-serif'
-    ctx.fillText('Nenhum ganhador na faixa principal' + (valorEstimadoProximo > 0 ? `  ·  Próximo est. ${fmtBRL(valorEstimadoProximo)}` : ''), W / 2, y + 50)
-    y += 80
+    ctx.fillText('Nenhum ganhador na faixa principal', W / 2, y + 48)
+    if (valorEstimadoProximo > 0) {
+      ctx.fillStyle = '#92400e'; ctx.font = 'bold 13px sans-serif'
+      ctx.fillText(`Estimativa próximo: ${fmtBRL(valorEstimadoProximo)}`, W / 2, y + 68)
+    }
+    y += valorEstimadoProximo > 0 ? 90 : 72
   }
 
   // ── PREMIAÇÃO ───────────────────────────────────────────────────
