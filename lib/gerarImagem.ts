@@ -95,7 +95,7 @@ export async function gerarImagemResultado(params: ResultadoParams): Promise<Buf
   const numLinhas = Math.ceil(todos.length / 8)
 
   const H_HEADER  = 130
-  const H_NUMS    = 50 + numLinhas * 58 + 16
+  const H_NUMS    = 70 + numLinhas * 64 + 16
   const H_STATS   = 110
   const H_ACUM    = acumulado ? 80 : 0
   const H_PREMIO  = premios.length  > 0 ? 44 + premios.length  * 30 : 0
@@ -147,7 +147,7 @@ export async function gerarImagemResultado(params: ResultadoParams): Promise<Buf
   noShadow(ctx)
 
   ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = CINZA_T; ctx.textAlign = 'center'
-  ctx.fillText('NÚMEROS SORTEADOS', W / 2, y + 22)
+  ctx.fillText('NUMEROS SORTEADOS', W / 2, y + 22)
 
   const bR   = 24
   const cols = 8
@@ -156,7 +156,7 @@ export async function gerarImagemResultado(params: ResultadoParams): Promise<Buf
 
   todos.forEach((n, i) => {
     const col = i % cols; const row = Math.floor(i / cols)
-    const cx  = bX0 + col * bGap; const cy = y + 40 + row * 58
+    const cx  = bX0 + col * bGap; const cy = y + 58 + row * 64
 
     // sombra suave na bolinha
     shadow(ctx, 6, 'rgba(0,0,0,0.18)')
@@ -207,7 +207,10 @@ export async function gerarImagemResultado(params: ResultadoParams): Promise<Buf
     fillRR(ctx, PAD, y, W - PAD * 2, 70, 14, '#fffbeb')
     noShadow(ctx)
     ctx.fillStyle = '#92400e'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center'
-    ctx.fillText('🏆 Prêmio Acumulado!', W / 2, y + 28)
+    // estrela desenhada
+    drawStar(ctx, W / 2 - 120, y + 24, 10, '#92400e')
+    drawStar(ctx, W / 2 + 120, y + 24, 10, '#92400e')
+    ctx.fillText('PREMIO ACUMULADO!', W / 2, y + 28)
     ctx.fillStyle = '#b45309'; ctx.font = '13px sans-serif'
     ctx.fillText('Nenhum ganhador na faixa principal' + (valorEstimadoProximo > 0 ? `  ·  Próximo est. ${fmtBRL(valorEstimadoProximo)}` : ''), W / 2, y + 50)
     y += 80
@@ -294,7 +297,7 @@ export async function gerarImagemResultado(params: ResultadoParams): Promise<Buf
 
       // badge acertos
       const badgeColor = ap.acertos === 0 ? '#6b7280' : ap.premiado ? p.solid : LARANJA
-      const badgeTxt2  = ap.acertos === 0 ? '0 acertos' : `${ap.acertos} acertos${ap.premiado ? ' 🏆' : ''}`
+      const badgeTxt2  = ap.acertos === 0 ? '0 acertos' : `${ap.acertos} acertos${ap.premiado ? ' [PREMIO]' : ''}`
       ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'right'
       const bw2 = ctx.measureText(badgeTxt2).width + 20
       fillRR(ctx, W - PAD - 16 - bw2, y + 12, bw2, 22, 11, badgeColor)
@@ -352,7 +355,7 @@ export async function gerarImagemRenovacao(params: RenovacaoParams): Promise<Buf
   // header
   ctx.fillStyle = hGrad(ctx, 0, W2, p.g1, p.g2); ctx.fillRect(0, 0, W2, 120)
   ctx.fillStyle = BRANCO; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center'
-  ctx.fillText('🔄 Renovação', W2 / 2, 56)
+  ctx.fillText('Renovacao', W2 / 2, 56)
   ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = '16px sans-serif'
   ctx.fillText(`${nomeGrupo}  ·  ${modalidade}`, W2 / 2, 88)
 
@@ -417,7 +420,7 @@ export async function gerarImagemRenovacao(params: RenovacaoParams): Promise<Buf
     noShadow(ctx)
     strokeRR(ctx, 28, y, W2 - 56, 100, 16, p.solid, 2)
     ctx.fillStyle = p.solid; ctx.font = 'bold 26px sans-serif'; ctx.textAlign = 'center'
-    ctx.fillText('🎉 Sem cobrança nesta rodada!', W2 / 2, y + 42)
+    ctx.fillText('Sem cobranca nesta rodada!', W2 / 2, y + 42)
     ctx.fillStyle = p.g1; ctx.font = '15px sans-serif'
     ctx.fillText('Os prêmios cobriram todos os custos.', W2 / 2, y + 72)
     y += 120
@@ -428,6 +431,20 @@ export async function gerarImagemRenovacao(params: RenovacaoParams): Promise<Buf
   ctx.fillText('loterias.gldtecnologia.com.br  ·  Bolão da Sorte', W2 / 2, y + 20)
 
   return canvas.toBuffer('image/png')
+}
+
+// ── Utilitário: estrela de 5 pontas ──────────────────────────────────────────
+function drawStar(ctx: Ctx, cx: number, cy: number, r: number, fill: string) {
+  ctx.beginPath()
+  for (let i = 0; i < 5; i++) {
+    const a1 = (Math.PI / 2) + (i * 2 * Math.PI) / 5
+    const a2 = a1 + Math.PI / 5
+    const x1 = cx + r * Math.cos(a1); const y1 = cy - r * Math.sin(a1)
+    const x2 = cx + (r * 0.4) * Math.cos(a2); const y2 = cy - (r * 0.4) * Math.sin(a2)
+    i === 0 ? ctx.moveTo(x1, y1) : ctx.lineTo(x1, y1)
+    ctx.lineTo(x2, y2)
+  }
+  ctx.closePath(); ctx.fillStyle = fill; ctx.fill()
 }
 
 // ── Utilitário: clareia uma cor hex ──────────────────────────────────────────
