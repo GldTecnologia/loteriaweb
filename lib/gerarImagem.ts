@@ -207,10 +207,7 @@ export async function gerarImagemResultado(params: ResultadoParams): Promise<Buf
     fillRR(ctx, PAD, y, W - PAD * 2, 70, 14, '#fffbeb')
     noShadow(ctx)
     ctx.fillStyle = '#92400e'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center'
-    // estrela desenhada
-    drawStar(ctx, W / 2 - 120, y + 24, 10, '#92400e')
-    drawStar(ctx, W / 2 + 120, y + 24, 10, '#92400e')
-    ctx.fillText('PREMIO ACUMULADO!', W / 2, y + 28)
+    ctx.fillText('Premio Acumulado!', W / 2, y + 28)
     ctx.fillStyle = '#b45309'; ctx.font = '13px sans-serif'
     ctx.fillText('Nenhum ganhador na faixa principal' + (valorEstimadoProximo > 0 ? `  ·  Próximo est. ${fmtBRL(valorEstimadoProximo)}` : ''), W / 2, y + 50)
     y += 80
