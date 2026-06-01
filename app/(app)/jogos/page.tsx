@@ -155,7 +155,9 @@ function JogosPageContent() {
     setSelecionados(prev => [...prev, ...extras].sort((a, b) => a - b))
   }
 
-  function adicionarAoStaging() {
+  const [verificando, setVerificando] = useState(false)
+
+  async function adicionarAoStaging() {
     if (!bolaoAtivo) return
     if (!participante.trim()) { toast('Informe o participante', 'error'); return }
     const nomeValidado = validarNome(participante)
@@ -177,6 +179,32 @@ function JogosPageContent() {
     if (selecionados.length !== qtdNumeros) {
       toast(`Selecione exatamente ${qtdNumeros} números (${selecionados.length} selecionados)`, 'error')
       return
+    }
+
+    const apostaAtual = numerosToAposta([...selecionados].sort((a, b) => a - b))
+
+    const duplicadoStaging = staging.find(j => numerosToAposta(j.numeros) === apostaAtual)
+    if (duplicadoStaging) {
+      toast(`Jogo duplicado na lista — esses números já foram adicionados por ${duplicadoStaging.participante}`, 'error')
+      return
+    }
+
+    setVerificando(true)
+    try {
+      const supabase = createClient()
+      const { data: duplicadoBanco } = await supabase
+        .from('jogos')
+        .select('participante')
+        .eq('bolao_id', bolaoAtivo.id)
+        .eq('aposta', apostaAtual)
+        .limit(1)
+
+      if (duplicadoBanco && duplicadoBanco.length > 0) {
+        toast(`Jogo duplicado — esses números já foram registrados por ${duplicadoBanco[0].participante}`, 'error')
+        return
+      }
+    } finally {
+      setVerificando(false)
     }
 
     const jogo: JogoStaging = {
@@ -203,10 +231,56 @@ function JogosPageContent() {
   async function confirmarTodos() {
     if (staging.length === 0) { toast('Nenhum jogo para confirmar', 'error'); return }
     if (!bolaoAtivo) return
+    const qtdJogosMax = bolaoAtivo.qtd_jogos ?? 99
     setSalvando(true)
 
     try {
       const supabase = createClient()
+
+      const participantesNoStaging = [...new Set(staging.map(j => j.participante))]
+      const { data: jogosExistentes } = await supabase
+        .from('jogos')
+        .select('participante')
+        .eq('bolao_id', bolaoAtivo.id)
+        .in('participante', participantesNoStaging)
+
+      const faltando: string[] = []
+      for (const p of participantesNoStaging) {
+        const savedCount = jogosExistentes?.filter(j =>
+          j.participante.toLowerCase() === p.toLowerCase()
+        ).length ?? 0
+        const stagingCount = staging.filter(j =>
+          j.participante.toLowerCase() === p.toLowerCase()
+        ).length
+        const total = savedCount + stagingCount
+        if (total < qtdJogosMax) {
+          faltando.push(`${p} (${total}/${qtdJogosMax})`)
+        }
+      }
+
+      if (faltando.length > 0) {
+        toast(
+          `Jogo(s) incompletos — faltam jogos: ${faltando.join(' · ')}`,
+          'error'
+        )
+        setSalvando(false)
+        return
+      }
+
+      const apostasNoStaging = staging.map(j => numerosToAposta(j.numeros))
+      const { data: duplicadosFinal } = await supabase
+        .from('jogos')
+        .select('participante, aposta')
+        .eq('bolao_id', bolaoAtivo.id)
+        .in('aposta', apostasNoStaging)
+
+      if (duplicadosFinal && duplicadosFinal.length > 0) {
+        const msgs = duplicadosFinal.map(d => `[${d.aposta}] → ${d.participante}`)
+        toast(`Jogo(s) já registrado(s) por outro usuário: ${msgs.join(' · ')}`, 'error')
+        setSalvando(false)
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
 
       const registros = staging.map(j => ({
@@ -513,11 +587,12 @@ function JogosPageContent() {
                 className="w-full"
                 style={{ borderColor: `${cor}55`, color: cor }}
                 onClick={adicionarAoStaging}
-                disabled={selecionados.length !== qtdNumeros}
+                disabled={selecionados.length !== qtdNumeros || verificando}
+                loading={verificando}
               >
                 <Plus className="h-4 w-4" />
-                Adicionar à Lista
-                {selecionados.length > 0 && selecionados.length < qtdNumeros && (
+                {verificando ? 'Verificando...' : 'Adicionar à Lista'}
+                {!verificando && selecionados.length > 0 && selecionados.length < qtdNumeros && (
                   <span className="text-xs text-gray-400 ml-1">({selecionados.length}/{qtdNumeros})</span>
                 )}
               </Button>
