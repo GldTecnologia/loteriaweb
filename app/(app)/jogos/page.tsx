@@ -232,17 +232,20 @@ function JogosPageContent() {
     if (staging.length === 0) { toast('Nenhum jogo para confirmar', 'error'); return }
     if (!bolaoAtivo) return
     const qtdJogosMax = bolaoAtivo.qtd_jogos ?? 99
+    console.log('[confirmarTodos] qtdJogosMax:', qtdJogosMax, '| staging.length:', staging.length)
     setSalvando(true)
 
     try {
       const supabase = createClient()
 
       const participantesNoStaging = [...new Set(staging.map(j => j.participante))]
-      const { data: jogosExistentes } = await supabase
+      const { data: jogosExistentes, error: errExistentes } = await supabase
         .from('jogos')
         .select('participante')
         .eq('bolao_id', bolaoAtivo.id)
         .in('participante', participantesNoStaging)
+
+      console.log('[confirmarTodos] jogosExistentes:', jogosExistentes, '| errExistentes:', errExistentes)
 
       const faltando: string[] = []
       for (const p of participantesNoStaging) {
@@ -253,10 +256,13 @@ function JogosPageContent() {
           j.participante.toLowerCase() === p.toLowerCase()
         ).length
         const total = savedCount + stagingCount
+        console.log(`[confirmarTodos] participante="${p}" saved=${savedCount} staging=${stagingCount} total=${total} max=${qtdJogosMax} bloqueado=${total < qtdJogosMax}`)
         if (total < qtdJogosMax) {
           faltando.push(`${p} (${total}/${qtdJogosMax})`)
         }
       }
+
+      console.log('[confirmarTodos] faltando:', faltando)
 
       if (faltando.length > 0) {
         toast(
