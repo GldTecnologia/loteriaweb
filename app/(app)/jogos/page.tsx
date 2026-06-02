@@ -289,6 +289,7 @@ function JogosPageContent() {
 
       const { data: { user } } = await supabase.auth.getUser()
 
+      const codigoAuth = uuidv4()
       const registros = staging.map(j => ({
         bolao_id: bolaoAtivo.id,
         modalidade: bolaoAtivo.modalidade,
@@ -298,7 +299,7 @@ function JogosPageContent() {
         aposta: numerosToAposta(j.numeros),
         quantidade: j.quantidade,
         chave_pix: j.chavePix || null,
-        codigo_autenticacao: uuidv4(),
+        codigo_autenticacao: codigoAuth,
         status_pagamento: 'pendente' as const,
         data: new Date().toISOString(),
       }))

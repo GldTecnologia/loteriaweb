@@ -85,7 +85,9 @@ alter table public.jogos
 -- Índices
 create index if not exists idx_jogos_bolao_id     on public.jogos(bolao_id);
 create index if not exists idx_jogos_participante on public.jogos(lower(participante));
-create unique index if not exists idx_jogos_auth  on public.jogos(codigo_autenticacao);
+-- Múltiplos jogos do mesmo bolão compartilham o mesmo codigo_autenticacao; não pode ser unique
+drop index if exists idx_jogos_auth;
+create index if not exists idx_jogos_auth on public.jogos(codigo_autenticacao);
 
 -- RLS (garante que existe)
 alter table public.jogos enable row level security;
