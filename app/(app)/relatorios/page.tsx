@@ -47,12 +47,18 @@ export default function RelatoriosPage() {
     setAtualizando(null)
   }
 
-  const jogosFiltrados = jogos.filter(j =>
-    !busca ||
-    j.participante.toLowerCase().includes(busca.toLowerCase()) ||
-    j.sequencia.includes(busca) ||
-    j.modalidade.toLowerCase().includes(busca.toLowerCase())
-  )
+  const jogosFiltrados = jogos
+    .filter(j =>
+      !busca ||
+      j.participante.toLowerCase().includes(busca.toLowerCase()) ||
+      j.sequencia.includes(busca) ||
+      j.modalidade.toLowerCase().includes(busca.toLowerCase())
+    )
+    .sort((a, b) => {
+      const nome = a.participante.localeCompare(b.participante, 'pt-BR', { sensitivity: 'base' })
+      if (nome !== 0) return nome
+      return Number(a.sequencia) - Number(b.sequencia)
+    })
 
   async function exportarPDF() {
     const { jsPDF } = await import('jspdf')
