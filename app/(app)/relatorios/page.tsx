@@ -10,6 +10,13 @@ import { FileText, Download, Search, CheckCircle2, RotateCcw } from 'lucide-reac
 import { formatBRL, formatDate } from '@/lib/utils'
 import type { Jogo } from '@/types'
 
+const MODALIDADE_COR: Record<string, string> = {
+  'Lotofácil':  '#91278F',
+  'Mega-Sena':  '#00A651',
+  'Quina':      '#2E3192',
+  'Dupla Sena': '#A62B43',
+}
+
 export default function RelatoriosPage() {
   const { toast } = useToast()
   const [jogos, setJogos] = useState<Jogo[]>([])
@@ -132,7 +139,14 @@ export default function RelatoriosPage() {
                     >
                       <td className="px-4 py-3 font-mono font-semibold text-blue-700 whitespace-nowrap">#{j.sequencia}</td>
                       <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{j.participante}</td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-600 whitespace-nowrap">{j.modalidade}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span
+                          className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold text-white"
+                          style={{ background: MODALIDADE_COR[j.modalidade] ?? '#6B7280' }}
+                        >
+                          {j.modalidade}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-600 max-w-[180px] truncate">{j.aposta}</td>
                       <td className="px-4 py-3 text-green-700 font-semibold whitespace-nowrap">
                         {j.bolao ? formatBRL(j.bolao.valor_cota) : '—'}
