@@ -69,16 +69,169 @@ export default function RelatoriosPage() {
 
   async function exportarPDF() {
     const { jsPDF } = await import('jspdf')
-    const pdf = new jsPDF()
-    pdf.setFontSize(16)
-    pdf.text('Relatório de Jogos', 14, 20)
-    pdf.setFontSize(10)
-    let y = 35
+
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const W = pdf.internal.pageSize.getWidth()
+    const H = pdf.internal.pageSize.getHeight()
+    const mL = 12, mR = 12, mB = 12
+    const tableW = W - mL - mR
+
+    const MODAL_RGB: Record<string, [number, number, number]> = {
+      'Lotofácil':  [145, 39, 143],
+      'Mega-Sena':  [0, 166, 81],
+      'Quina':      [46, 49, 146],
+      'Dupla Sena': [166, 43, 67],
+    }
+
+    // col widths must sum to tableW (273)
+    const cols = [
+      { label: 'SEQ',          w: 15 },
+      { label: 'PARTICIPANTE', w: 60 },
+      { label: 'MODALIDADE',   w: 33 },
+      { label: 'NÚMEROS',      w: 85 },
+      { label: 'VALOR COTA',   w: 25 },
+      { label: 'PAGAMENTO',    w: 25 },
+      { label: 'DATA',         w: 30 },
+    ]
+
+    const rowH = 7
+    const thH  = 9
+    const barH = 20
+
+    const drawBar = () => {
+      pdf.setFillColor(15, 23, 42)
+      pdf.rect(0, 0, W, barH, 'F')
+      pdf.setTextColor(255, 255, 255)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(12)
+      pdf.text('RELATÓRIO DE JOGOS', mL, 13)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(7.5)
+      pdf.setTextColor(148, 163, 184)
+      const dt = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+      pdf.text(`${dt}  ·  ${jogosFiltrados.length} jogos`, W - mR, 13, { align: 'right' })
+    }
+
+    const drawTH = (y: number) => {
+      pdf.setFillColor(51, 65, 85)
+      pdf.rect(mL, y, tableW, thH, 'F')
+      pdf.setTextColor(255, 255, 255)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(7)
+      let x = mL
+      cols.forEach(c => { pdf.text(c.label, x + 3, y + 6); x += c.w })
+      return y + thH
+    }
+
+    const drawRow = (j: Jogo, y: number, idx: number) => {
+      if (j.status_pagamento === 'pago') {
+        pdf.setFillColor(240, 253, 244)
+      } else if (idx % 2 === 0) {
+        pdf.setFillColor(248, 250, 252)
+      } else {
+        pdf.setFillColor(255, 255, 255)
+      }
+      pdf.rect(mL, y, tableW, rowH, 'F')
+      pdf.setDrawColor(226, 232, 240)
+      pdf.setLineWidth(0.1)
+      pdf.line(mL, y + rowH, mL + tableW, y + rowH)
+
+      const cy = y + rowH / 2 + 1.5
+      let x = mL
+
+      // Seq
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(7.5)
+      pdf.setTextColor(37, 99, 235)
+      pdf.text(`#${j.sequencia}`, x + 3, cy)
+      x += cols[0].w
+
+      // Participante
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(17, 24, 39)
+      const nome = j.participante.length > 26 ? j.participante.slice(0, 26) + '…' : j.participante
+      pdf.text(nome, x + 3, cy)
+      x += cols[1].w
+
+      // Modalidade badge
+      const rgb = MODAL_RGB[j.modalidade] ?? [107, 114, 128]
+      pdf.setFillColor(rgb[0], rgb[1], rgb[2])
+      pdf.roundedRect(x + 2, y + 1.5, cols[2].w - 4, rowH - 3, 1.5, 1.5, 'F')
+      pdf.setTextColor(255, 255, 255)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(6.5)
+      pdf.text(j.modalidade, x + cols[2].w / 2, cy, { align: 'center' })
+      x += cols[2].w
+
+      // Números
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(7)
+      pdf.setTextColor(75, 85, 99)
+      const num = j.aposta.length > 48 ? j.aposta.slice(0, 48) + '…' : j.aposta
+      pdf.text(num, x + 3, cy)
+      x += cols[3].w
+
+      // Cota
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(7.5)
+      pdf.setTextColor(22, 163, 74)
+      pdf.text(j.bolao ? formatBRL(j.bolao.valor_cota) : '—', x + 3, cy)
+      x += cols[4].w
+
+      // Pagamento
+      if (j.status_pagamento === 'pago') {
+        pdf.setTextColor(22, 163, 74)
+        pdf.text('Pago', x + 3, cy)
+      } else {
+        pdf.setTextColor(217, 119, 6)
+        pdf.text('Pendente', x + 3, cy)
+      }
+      x += cols[5].w
+
+      // Data
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(107, 114, 128)
+      pdf.text(formatDate(j.data), x + 3, cy)
+    }
+
+    // ── Render ──────────────────────────────────────────────
+    drawBar()
+    let y = drawTH(barH)
+
     jogosFiltrados.forEach((j, i) => {
-      if (y > 270) { pdf.addPage(); y = 20 }
-      pdf.text(`${i + 1}. ${j.participante} | Seq: ${j.sequencia} | ${j.modalidade} | ${j.aposta}`, 14, y)
-      y += 7
+      if (y + rowH > H - mB - 20) {
+        pdf.addPage()
+        drawBar()
+        y = drawTH(barH)
+      }
+      drawRow(j, y, i)
+      y += rowH
     })
+
+    // Summary bar
+    y += 5
+    if (y + 13 > H - mB) { pdf.addPage(); drawBar(); y = barH + 5 }
+    const pagos    = jogosFiltrados.filter(j => j.status_pagamento === 'pago')
+    const totalArr = pagos.reduce((s, j) => s + Number(j.bolao?.valor_cota ?? 0), 0)
+    pdf.setFillColor(241, 245, 249)
+    pdf.roundedRect(mL, y, tableW, 13, 2, 2, 'F')
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(8)
+    pdf.setTextColor(51, 65, 85)
+    pdf.text(`Total de jogos: ${jogosFiltrados.length}`, mL + 6, y + 8.5)
+    pdf.text(`Jogos pagos: ${pagos.length}`, mL + 70, y + 8.5)
+    pdf.text(`Total arrecadado: ${formatBRL(totalArr)}`, mL + 140, y + 8.5)
+
+    // Page numbers
+    const total = (pdf as any).internal.pages.length - 1
+    for (let p = 1; p <= total; p++) {
+      pdf.setPage(p)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(7)
+      pdf.setTextColor(148, 163, 184)
+      pdf.text(`Página ${p} de ${total}`, W / 2, H - 4, { align: 'center' })
+    }
+
     pdf.save('relatorio-jogos.pdf')
     toast('PDF exportado!', 'success')
   }
