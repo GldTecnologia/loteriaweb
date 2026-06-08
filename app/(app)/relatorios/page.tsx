@@ -10,6 +10,10 @@ import { FileText, Download, Search, CheckCircle2, RotateCcw } from 'lucide-reac
 import { formatBRL, formatDate } from '@/lib/utils'
 import type { Jogo } from '@/types'
 
+function cotaPorJogo(j: Jogo): number {
+  return Number(j.bolao?.valor_cota ?? 0) / (Number(j.bolao?.qtd_jogos) || 1)
+}
+
 const MODALIDADE_COR: Record<string, string> = {
   'Lotofácil':  '#91278F',
   'Mega-Sena':  '#00A651',
@@ -89,7 +93,7 @@ export default function RelatoriosPage() {
       { label: 'PARTICIPANTE', w: 60 },
       { label: 'MODALIDADE',   w: 33 },
       { label: 'NÚMEROS',      w: 85 },
-      { label: 'VALOR COTA',   w: 25 },
+      { label: 'COTA/JOGO',    w: 25 },
       { label: 'PAGAMENTO',    w: 25 },
       { label: 'DATA',         w: 30 },
     ]
@@ -171,11 +175,11 @@ export default function RelatoriosPage() {
       pdf.text(num, x + 3, cy)
       x += cols[3].w
 
-      // Cota
+      // Cota/Jogo
       pdf.setFont('helvetica', 'bold')
       pdf.setFontSize(7.5)
       pdf.setTextColor(22, 163, 74)
-      pdf.text(j.bolao ? formatBRL(j.bolao.valor_cota) : '—', x + 3, cy)
+      pdf.text(j.bolao ? formatBRL(cotaPorJogo(j)) : '—', x + 3, cy)
       x += cols[4].w
 
       // Pagamento
@@ -212,7 +216,7 @@ export default function RelatoriosPage() {
     y += 5
     if (y + 13 > H - mB) { pdf.addPage(); drawBar(); y = barH + 5 }
     const pagos    = jogosFiltrados.filter(j => j.status_pagamento === 'pago')
-    const totalArr = pagos.reduce((s, j) => s + Number(j.bolao?.valor_cota ?? 0), 0)
+    const totalArr = pagos.reduce((s, j) => s + cotaPorJogo(j), 0)
     pdf.setFillColor(241, 245, 249)
     pdf.roundedRect(mL, y, tableW, 13, 2, 2, 'F')
     pdf.setFont('helvetica', 'bold')
@@ -276,7 +280,7 @@ export default function RelatoriosPage() {
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Participante</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Modalidade</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Números</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Cota</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Cota/Jogo</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Pagamento</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Data</th>
                     {isAdmin && <th className="px-4 py-3" />}
@@ -302,7 +306,7 @@ export default function RelatoriosPage() {
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-600 max-w-[180px] truncate">{j.aposta}</td>
                       <td className="px-4 py-3 text-green-700 font-semibold whitespace-nowrap">
-                        {j.bolao ? formatBRL(j.bolao.valor_cota) : '—'}
+                        {j.bolao ? formatBRL(cotaPorJogo(j)) : '—'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <Badge variant={j.status_pagamento === 'pago' ? 'success' : 'warning'}>
