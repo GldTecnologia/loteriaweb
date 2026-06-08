@@ -15,6 +15,7 @@ interface BolaoComStats {
   bolao: Bolao
   totalJogos: number
   totalArrecadado: number
+  totalParticipantes: number
 }
 
 interface Stats {
@@ -50,9 +51,11 @@ export default function DashboardPage() {
         boloes: boloes.map(b => {
           const jogosDoBolao = jogos.filter(j => Number(j.bolao_id) === Number(b.id))
           const n = jogosDoBolao.length
+          const qtdJogos = Number(b.qtd_jogos) || 1
+          const totalParticipantes = Math.floor(n / qtdJogos)
           // Arrecadado = participantes únicos × valor_cota (cada participante paga 1 cota independente de quantos jogos tem)
           const participantesUnicos = new Set(jogosDoBolao.map(j => j.participante?.toLowerCase())).size
-          return { bolao: b, totalJogos: n, totalArrecadado: participantesUnicos * Number(b.valor_cota || 0) }
+          return { bolao: b, totalJogos: n, totalArrecadado: participantesUnicos * Number(b.valor_cota || 0), totalParticipantes }
         }),
       })
       setLoading(false)
@@ -130,8 +133,9 @@ export default function DashboardPage() {
                       { label: 'Sorteio',  value: sorteio },
                       { label: 'Prêmio',   value: formatBRL(b.bolao.valor_premio_inicial) },
                       { label: 'Cota',     value: formatBRL(b.bolao.valor_cota) },
-                      { label: 'Jogos',    value: String(b.totalJogos) },
-                      { label: 'Arrecad.', value: formatBRL(b.totalArrecadado) },
+                      { label: 'Jogos',         value: String(b.totalJogos) },
+                      { label: 'Participantes', value: String(b.totalParticipantes) },
+                      { label: 'Arrecad.',      value: formatBRL(b.totalArrecadado) },
                     ].map(item => (
                       <div
                         key={item.label}
