@@ -132,10 +132,10 @@ export default function DashboardPage() {
                     {[
                       { label: 'Sorteio',  value: sorteio },
                       { label: 'Prêmio',   value: formatBRL(b.bolao.valor_premio_inicial) },
-                      { label: '',         value: formatBRL(b.bolao.valor_cota) },
-                      { label: 'Jogos',         value: String(b.totalJogos) },
-                      { label: 'Participantes', value: String(b.totalParticipantes) },
-                      { label: '',              value: formatBRL(b.totalArrecadado) },
+                      { label: 'Valor Cota',       value: formatBRL(b.bolao.valor_cota) },
+                      { label: 'Jogos',            value: String(b.totalJogos) },
+                      { label: 'Participantes',    value: String(b.totalParticipantes) },
+                      { label: 'Valor Arrecadado', value: formatBRL(b.totalArrecadado) },
                     ].map(item => (
                       <div
                         key={item.label}
