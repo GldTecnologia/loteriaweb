@@ -132,17 +132,17 @@ export default function DashboardPage() {
                     {[
                       { label: 'Sorteio',  value: sorteio },
                       { label: 'Prêmio',   value: formatBRL(b.bolao.valor_premio_inicial) },
-                      { label: 'Cota',     value: formatBRL(b.bolao.valor_cota) },
+                      { label: '',         value: formatBRL(b.bolao.valor_cota) },
                       { label: 'Jogos',         value: String(b.totalJogos) },
                       { label: 'Participantes', value: String(b.totalParticipantes) },
-                      { label: 'Arrecad.',      value: formatBRL(b.totalArrecadado) },
+                      { label: '',              value: formatBRL(b.totalArrecadado) },
                     ].map(item => (
                       <div
                         key={item.label}
                         className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs"
                         style={{ background: `${cor}0d` }}
                       >
-                        <span className="text-gray-400 font-medium">{item.label}</span>
+                        {item.label && <span className="text-gray-400 font-medium">{item.label}</span>}
                         <span className="font-bold text-gray-800">{item.value}</span>
                       </div>
                     ))}
