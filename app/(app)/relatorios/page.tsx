@@ -217,14 +217,25 @@ export default function RelatoriosPage() {
     if (y + 13 > H - mB) { pdf.addPage(); drawBar(); y = barH + 5 }
     const pagos    = jogosFiltrados.filter(j => j.status_pagamento === 'pago')
     const totalArr = pagos.reduce((s, j) => s + cotaPorJogo(j), 0)
+
+    const byBolao = new Map<number, { count: number; qtd: number }>()
+    jogosFiltrados.forEach(j => {
+      const bid = Number(j.bolao_id)
+      const cur = byBolao.get(bid) ?? { count: 0, qtd: Number(j.bolao?.qtd_jogos) || 1 }
+      cur.count++
+      byBolao.set(bid, cur)
+    })
+    const totalPart = [...byBolao.values()].reduce((s, v) => s + Math.floor(v.count / v.qtd), 0)
+
     pdf.setFillColor(241, 245, 249)
     pdf.roundedRect(mL, y, tableW, 13, 2, 2, 'F')
     pdf.setFont('helvetica', 'bold')
     pdf.setFontSize(8)
     pdf.setTextColor(51, 65, 85)
-    pdf.text(`Total de jogos: ${jogosFiltrados.length}`, mL + 6, y + 8.5)
-    pdf.text(`Jogos pagos: ${pagos.length}`, mL + 70, y + 8.5)
-    pdf.text(`Total arrecadado: ${formatBRL(totalArr)}`, mL + 140, y + 8.5)
+    pdf.text(`Total de jogos: ${jogosFiltrados.length}`,  mL + 6,   y + 8.5)
+    pdf.text(`Participantes: ${totalPart}`,               mL + 65,  y + 8.5)
+    pdf.text(`Jogos pagos: ${pagos.length}`,              mL + 125, y + 8.5)
+    pdf.text(`Total arrecadado: ${formatBRL(totalArr)}`,  mL + 185, y + 8.5)
 
     // Page numbers
     const total = (pdf as any).internal.pages.length - 1
